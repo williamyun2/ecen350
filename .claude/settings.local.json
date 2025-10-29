@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(sed:*)",
+      "Bash(cp:*)",
+      "Bash(iverilog:*)",
+      "Bash(vvp:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

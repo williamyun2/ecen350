@@ -1,0 +1,188 @@
+`timescale 1ns/1ps
+
+module SC_Control_tb;
+
+    // Outputs
+    wire       Reg2Loc;
+    wire       ALUSrc;
+    wire       MemtoReg;
+    wire       RegWrite;
+    wire       MemRead;
+    wire       MemWrite;
+    wire       Branch;
+    wire       Uncondbranch;
+    wire [3:0] ALUOp;
+    wire [1:0] SignOp;
+    
+    // Inputs
+    reg [10:0] opcode;
+    
+    // Test tracking
+    integer test_count;
+    integer pass_count;
+    integer fail_count;
+    
+    // Instantiate the Unit Under Test (UUT)
+    SC_Control uut (
+        .Reg2Loc(Reg2Loc),
+        .ALUSrc(ALUSrc),
+        .MemtoReg(MemtoReg),
+        .RegWrite(RegWrite),
+        .MemRead(MemRead),
+        .MemWrite(MemWrite),
+        .Branch(Branch),
+        .Uncondbranch(Uncondbranch),
+        .ALUOp(ALUOp),
+        .SignOp(SignOp),
+        .opcode(opcode)
+    );
+    
+    task check_output;
+        input [10:0] test_opcode;
+        input [127:0] inst_name;  // Changed from string to reg array
+        input exp_Reg2Loc;
+        input exp_ALUSrc;
+        input exp_MemtoReg;
+        input exp_RegWrite;
+        input exp_MemRead;
+        input exp_MemWrite;
+        input exp_Branch;
+        input exp_Uncondbranch;
+        input [3:0] exp_ALUOp;
+        input [1:0] exp_SignOp;
+        begin
+            test_count = test_count + 1;
+            #1; // Allow time for combinational logic
+            
+            if (Reg2Loc !== exp_Reg2Loc || ALUSrc !== exp_ALUSrc || 
+                MemtoReg !== exp_MemtoReg || RegWrite !== exp_RegWrite ||
+                MemRead !== exp_MemRead || MemWrite !== exp_MemWrite ||
+                Branch !== exp_Branch || Uncondbranch !== exp_Uncondbranch ||
+                ALUOp !== exp_ALUOp || SignOp !== exp_SignOp) begin
+                
+                $display("ERROR: Test %0d FAILED for %s (opcode=%b)", test_count, inst_name, test_opcode);
+                $display("  Expected: Reg2Loc=%b ALUSrc=%b MemtoReg=%b RegWrite=%b MemRead=%b MemWrite=%b Branch=%b Uncondbranch=%b ALUOp=%b SignOp=%b",
+                         exp_Reg2Loc, exp_ALUSrc, exp_MemtoReg, exp_RegWrite, exp_MemRead, exp_MemWrite, exp_Branch, exp_Uncondbranch, exp_ALUOp, exp_SignOp);
+                $display("  Got:      Reg2Loc=%b ALUSrc=%b MemtoReg=%b RegWrite=%b MemRead=%b MemWrite=%b Branch=%b Uncondbranch=%b ALUOp=%b SignOp=%b",
+                         Reg2Loc, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, Uncondbranch, ALUOp, SignOp);
+                fail_count = fail_count + 1;
+            end else begin
+                $display("PASS: Test %0d - %s", test_count, inst_name);
+                pass_count = pass_count + 1;
+            end
+        end
+    endtask
+    
+    integer i;
+    
+    initial begin
+        // Initialize VCD dump
+        $dumpfile("SC_Control_tb.vcd");
+        $dumpvars(0, SC_Control_tb);
+        
+        // Initialize counters
+        test_count = 0;
+        pass_count = 0;
+        fail_count = 0;
+        
+        $display("\n========================================");
+        $display("Starting SC_Control Testbench");
+        $display("========================================\n");
+        
+        // Test AND register
+        $display("\n--- Testing AND Register ---");
+        opcode = 11'b10001010000;
+        check_output(opcode, "AND", 0,  0,  0,  1,  0,  0,  0,  0,  4'b0000, 2'b00);
+        
+        // Test ORR register
+        $display("\n--- Testing ORR Register ---");
+        opcode = 11'b10101010000;
+        check_output(opcode, "ORR", 0,  0,  0,  1,  0,  0,  0,  0,  4'b0001, 2'b00);
+        
+        // Test ADD register
+        $display("\n--- Testing ADD Register ---");
+        opcode = 11'b10001011000;
+        check_output(opcode, "ADD", 0,  0,  0,  1,  0,  0,  0,  0,  4'b0010, 2'b00);
+        
+        // Test SUB register
+        $display("\n--- Testing SUB Register ---");
+        opcode = 11'b11001011000;
+        check_output(opcode, "SUB", 0,  0,  0,  1,  0,  0,  0,  0,  4'b0110, 2'b00);
+        
+        // Test ADDIMM - 2 possibilities
+        $display("\n--- Testing ADDIMM (2 variants) ---");
+        for (i = 0; i < 2; i = i + 1) begin
+            opcode = 11'b10010001000 | i;
+            check_output(opcode, "ADDIMM", 0,  1,  0,  1,  0,  0,  0,  0,  4'b0010, 2'b00);
+        end
+        
+        // Test SUBIMM - 2 possibilities
+        $display("\n--- Testing SUBIMM (2 variants) ---");
+        for (i = 0; i < 2; i = i + 1) begin
+            opcode = 11'b11010001000 | i;
+            check_output(opcode, "SUBIMM", 0,  1,  0,  1,  0,  0,  0,  0,  4'b0110, 2'b00);
+        end
+        
+        // Test MOVZ - 4 possibilities
+        $display("\n--- Testing MOVZ (4 variants) ---");
+        for (i = 0; i < 4; i = i + 1) begin
+            opcode = 11'b11010010100 | i;
+            check_output(opcode, "MOVZ", 0,  1,  0,  1,  0,  0,  0,  0,  4'b0111, 2'b00);
+        end
+        
+        // Test B - 32 possibilities
+        $display("\n--- Testing B (32 variants) ---");
+        for (i = 0; i < 32; i = i + 1) begin
+            opcode = 11'b00010100000 | i;
+            check_output(opcode, "B", 0,  0,  0,  0,  0,  0,  0,  1,  4'b0000, 2'b11);
+        end
+        
+        // Test CBZ - 8 possibilities
+        $display("\n--- Testing CBZ (8 variants) ---");
+        for (i = 0; i < 8; i = i + 1) begin
+            opcode = 11'b10110100000 | i;
+            check_output(opcode, "CBZ", 1,  0,  0,  0,  0,  0,  1,  0,  4'b0111, 2'b10);
+        end
+        
+        // Test LDUR
+        $display("\n--- Testing LDUR ---");
+        opcode = 11'b11111000010;
+        check_output(opcode, "LDUR", 0,  1,  1,  1,  1,  0,  0,  0,  4'b0010, 2'b01);
+        
+        // Test STUR
+        $display("\n--- Testing STUR ---");
+        opcode = 11'b11111000000;
+        check_output(opcode, "STUR", 1,  1,  0,  0,  0,  1,  0,  0,  4'b0010, 2'b01);
+        
+        // Test undefined opcodes
+        $display("\n--- Testing 10 Undefined Opcodes ---");
+        opcode = 11'b00000000000; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b11111111111; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b01010101010; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b10101010101; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b11001100110; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b00110011001; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b10011001100; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b01100110011; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b11110000111; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        opcode = 11'b00001111000; check_output(opcode, "UNDEF", 0,0,0,0,0,0,0,0,4'b0000,2'b00);
+        
+        // Print summary
+        $display("\n========================================");
+        $display("Test Summary");
+        $display("========================================");
+        $display("Total Tests: %0d", test_count);
+        $display("Passed:      %0d", pass_count);
+        $display("Failed:      %0d", fail_count);
+        
+        if (fail_count == 0) begin
+            $display("\nALL TESTS PASSED!");
+        end else begin
+            $display("\nSOME TESTS FAILED!");
+        end
+        $display("========================================\n");
+        
+        $finish;
+    end
+
+endmodule
