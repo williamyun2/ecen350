@@ -41,7 +41,7 @@ module SingleCycleProcTest_v;
    wire [63:0] 	  currentPC;
 
    // Instantiate the Unit Under Test (UUT)
-   singlecycleZ uut (
+   SingleCycleProc uut (
 		    .CLK(CLK),
 		    .reset(Reset),
 		    .startpc(startPC),

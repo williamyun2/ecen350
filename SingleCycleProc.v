@@ -72,7 +72,7 @@ module SingleCycleProc(
 			  );
 
    // Control Unit
-   control SingleCycleControl(
+   SC_Control SingleCycleControl(
 		   .Reg2Loc(Reg2Loc),
 		   .ALUSrc(ALUSrc),
 		   .MemtoReg(MemtoReg),
