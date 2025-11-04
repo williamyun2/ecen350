@@ -15,6 +15,14 @@ module RegisterFile(
   // Storage: 32 registers, each 64 bits
   reg [63:0] rf [31:0];
 
+  // Initialize all registers to zero
+  integer i;
+  initial begin
+    for (i = 0; i < 32; i = i + 1) begin
+      rf[i] = 64'b0;
+    end
+  end
+
   // Combinational read stage
   reg [63:0] a_next;
   reg [63:0] b_next;
@@ -35,17 +43,17 @@ module RegisterFile(
     b_next = (RB == 5'd31) ? 64'b0 : rf[RB];
 
     // Write-through bypass: if writing to same register being read this cycle
-    if (RegWr && (RW == RA) && (RW != 5'd31)) a_next = BusW;
-    if (RegWr && (RW == RB) && (RW != 5'd31)) b_next = BusW;
+    // Small delay on bypass to break combinational loops
+    if (RegWr && (RW == RA) && (RW != 5'd31)) a_next = #1 BusW;
+    if (RegWr && (RW == RB) && (RW != 5'd31)) b_next = #1 BusW;
   end
 
-  // Required #3 delay on outputs (simulation only; synthesizers ignore delays)
-  assign #3 BusA = a_next;
-  assign #3 BusB = b_next;
+  // Outputs without delay for single-cycle processor
+  assign BusA = a_next;
+  assign BusB = b_next;
 
 endmodule
 
 
 
 // https://chatgpt.com/g/g-p-68fa84289bfc81918d42fdf621b4ce84-will/c/69027e05-f9cc-8322-9263-5ef860e64ef2
-

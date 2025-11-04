@@ -57,7 +57,7 @@ module InstructionMemory(Data, Address);
 	63'h020: Data = 32'h8B0901AD;
 	63'h024: Data = 32'hCB09018C;
 	63'h028: Data = 32'h17FFFFFD;
-	63'h02c: Data = 32'hF80203ED;
+	63'h02c: Data = 32'hF80203EA;  // STUR X10, [..]
 	63'h030: Data = 32'hF84203ED;  //One last load to place stored value on memdbus for test checking.
 
 	/* Add code for your tests here */
@@ -67,8 +67,3 @@ module InstructionMemory(Data, Address);
       endcase
    end
 endmodule
-
-
-
-// https://chatgpt.com/g/g-p-68fa84289bfc81918d42fdf621b4ce84-will/c/69027ea8-2ad8-8321-9d68-4308f0d9044f
-

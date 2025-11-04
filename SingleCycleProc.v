@@ -1,4 +1,6 @@
-module SingleCycleProc(
+`timescale 1ns / 1ps
+
+module singlecycle(
 		   input	     reset, //Active High
 		   input [63:0]	     startpc,
 		   output reg [63:0] currentpc,
@@ -45,10 +47,10 @@ module SingleCycleProc(
    wire [63:0] 			     extimm;
 
    // Data Memory connections
-   wire [63:0] 			     readdata;
+   wire [63:0]                       memout;
 
-   // Mux outputs
-   wire [63:0] 			     aluinputB;   // Output of ALUSrc mux
+   // Multiplexer outputs
+   wire [63:0]                       aluin2;      // ALU input 2 (from ALUSrc mux)
 
    // PC update logic
    always @(posedge CLK)
@@ -59,10 +61,18 @@ module SingleCycleProc(
           currentpc <= #3 nextpc;
      end
 
+   // Debug output - use negedge to avoid race conditions
+   always @(negedge CLK)
+     begin
+        if (currentpc >= 64'h0 && currentpc <= 64'h30)
+          $display("  [negedge] PC=%h X9=%h X10=%h X11=%h X12=%h X13=%h BusA=%h BusB=%h ALUOut=%h",
+                   currentpc, rf.rf[9], rf.rf[10], rf.rf[11], rf.rf[12], rf.rf[13], regoutA, regoutB, aluout);
+     end
+
    // Parts of instruction
    assign rd = instruction[4:0];
-   assign rn = instruction[9:5];
-   assign rm = Reg2Loc ? instruction[4:0] : instruction[20:16];
+   assign rm = instruction[9:5];
+   assign rn = Reg2Loc ? instruction[4:0] : instruction[20:16];
    assign opcode = instruction[31:21];
 
    // Instruction Memory
@@ -86,54 +96,49 @@ module SingleCycleProc(
 		   .opcode(opcode)
 		   );
 
-   /*
-    * Connect the remaining datapath elements below.
-    * Do not forget any additional multiplexers that may be required.
-    */
-
    // Register File
    RegisterFile rf(
 		   .BusA(regoutA),
 		   .BusB(regoutB),
 		   .BusW(MemtoRegOut),
-		   .RA(rn),
-		   .RB(rm),
+		   .RA(rm),
+		   .RB(rn),
 		   .RW(rd),
 		   .RegWr(RegWrite),
 		   .Clk(CLK)
 		   );
 
    // Sign Extender
-   SignExtender se(
-		   .SignExOut(extimm),
-		   .Instruction(instruction[25:0]),
-		   .SignOp(SignOp)
-		   );
+   SignExtender signext(
+			.SignExOut(extimm),
+			.Instruction(instruction[25:0]),
+			.SignOp(SignOp)
+			);
 
-   // ALUSrc Mux (selects between register B and immediate)
-   assign aluinputB = ALUSrc ? extimm : regoutB;
+   // ALUSrc Multiplexer: selects between regoutB and sign-extended immediate
+   assign aluin2 = ALUSrc ? extimm : regoutB;
 
    // ALU
    ALU alu(
 	   .BusW(aluout),
 	   .BusA(regoutA),
-	   .BusB(aluinputB),
+	   .BusB(aluin2),
 	   .ALUCtrl(ALUop),
 	   .Zero(zero)
 	   );
 
    // Data Memory
-   DataMemory dmem(
-		   .ReadData(readdata),
-		   .Address(aluout),
-		   .WriteData(regoutB),
-		   .MemoryRead(MemRead),
-		   .MemoryWrite(MemWrite),
-		   .Clock(CLK)
-		   );
+   DataMemory datamem(
+		      .ReadData(memout),
+		      .Address(aluout),
+		      .WriteData(regoutB),
+		      .MemoryRead(MemRead),
+		      .MemoryWrite(MemWrite),
+		      .Clock(CLK)
+		      );
 
-   // MemtoReg Mux (selects between ALU output and memory read data)
-   assign MemtoRegOut = MemtoReg ? readdata : aluout;
+   // MemtoReg Multiplexer: selects between ALU output and memory output
+   assign MemtoRegOut = MemtoReg ? memout : aluout;
 
    // Next PC Logic
    NextPClogic nextpclogic(
@@ -146,5 +151,3 @@ module SingleCycleProc(
 			   );
 
 endmodule
-
-// https://chatgpt.com/g/g-p-68fa84289bfc81918d42fdf621b4ce84-will/c/69028982-6c24-8331-8064-0ea752a9b04d

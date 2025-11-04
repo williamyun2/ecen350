@@ -12,6 +12,8 @@ module SingleCycleProcTest_v;
         $dumpvars;
      end
 
+   // These tasks are used to check if a given test has passed and
+   // confirm that all tests passed.
    task passTest;
       input [63:0] actualOut, expectedOut;
       input [`STRLEN*8:0] testType;
@@ -41,7 +43,7 @@ module SingleCycleProcTest_v;
    wire [63:0] 	  currentPC;
 
    // Instantiate the Unit Under Test (UUT)
-   SingleCycleProc uut (
+   singlecycle uut (
 		    .CLK(CLK),
 		    .reset(Reset),
 		    .startpc(startPC),
@@ -69,29 +71,29 @@ module SingleCycleProcTest_v;
       @(posedge CLK);
       Reset = 0;
 
-      $display("PC     Rd Rn Rm  X9               X10              X11              X12              X13              RW BusW             ALU              Inst");
+      // ***********************************************************
+      // This while loop will continue cycling the processor until the
+      // PC reaches the final instruction in the first test.  If the
+      // program forms an infinite loop, never reaching the end, the
+      // watchdog timer will kick in and kill simulation after 64K
+      // cycles.
+      // ***********************************************************
+
       while (currentPC < 64'h30)
         begin
 	   @(posedge CLK);
 	   @(negedge CLK);
-           $display("%h %d  %d  %d   %h %h %h %h %h %b  %h %h %h", 
-                    currentPC,
-                    uut.rd,
-                    uut.rn,
-                    uut.rm,
-                    uut.rf.rf[9], 
-                    uut.rf.rf[10], 
-                    uut.rf.rf[11], 
-                    uut.rf.rf[12], 
-                    uut.rf.rf[13], 
-                    uut.RegWrite,
-                    uut.MemtoRegOut,
-                    uut.aluout,
-                    uut.instruction);
+           $display("CurrentPC:%h Instruction:%h MemtoRegOut:%h", currentPC, uut.instruction, MemtoRegOut);
         end
       passTest(MemtoRegOut, 64'hF, "Results of Program 1", passed);
 
-      allPassed(passed, 1);
+      // ***********************************************************
+      // Add your new tests here
+      // ***********************************************************
+
+      // Done
+      allPassed(passed, 1);   // Be sure to change the one to match
+      // the number of tests you add.
       $finish;
    end
 
@@ -107,12 +109,13 @@ module SingleCycleProcTest_v;
       watchdog = watchdog +1;
    end
 
-   // Kill the simulation if the watchdog hits 32 cycles to prevent excessive output
+   // Kill the simulation if the watchdog hits 64K cycles
    always @*
-     if (watchdog == 16'h20)
+     if (watchdog == 16'hFF)
        begin
-          $display("Watchdog Timer Expired - stopping at 32 cycles");
+          $display("Watchdog Timer Expired.");
           $finish;
        end
+
 
 endmodule

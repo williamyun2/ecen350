@@ -45,7 +45,8 @@ module DataMemory(ReadData , Address , WriteData , MemoryRead , MemoryWrite , Cl
      end
 
    // This always block reads the data memory and places a double word
-   // on the ReadData bus - COMBINATIONAL for single-cycle processor
+   // on the ReadData bus.
+   // Changed to combinational (asynchronous) read for single-cycle processor
    always @(*)
      begin
         if(MemoryRead)
@@ -61,12 +62,12 @@ module DataMemory(ReadData , Address , WriteData , MemoryRead , MemoryWrite , Cl
           end
         else
           begin
-             ReadData = 64'bx;
+             ReadData = 64'b0;
           end
      end
 
    // This always block takes data from the WriteData bus and writes
-   // it into the DataMemory - SYNCHRONOUS (on clock edge)
+   // it into the DataMemory.
    always @(posedge Clock)
      begin
         if(MemoryWrite)
