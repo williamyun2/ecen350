@@ -39,11 +39,12 @@ module InstructionMemory(Data, Address);
 	 * 
 	 * loop:
 	 * 1C: CBZ X12, end  //while X12 is not 0
-	 * 20: ADD X13, X13, X9  //Increment counter in X13
-	 * 24: SUB X12, X12, X9  //Decrement remainder of big constant in X12
+	 * 20: ADD X13, X13, X9  //Increment counter in X13.
+	 * 24: SUB X12, X12, X9  //Decrement remainder of big constant in X12.
 	 * 28: B loop  //Repeat till X12 is 0
 	 * 2C: STUR X13, [XZR, 0x20]  //store back the counter value into the memory location 0x20
 	 */
+	 // x13 = 0xF = 15 
 	
 
 	63'h000: Data = 32'hF84003E9;

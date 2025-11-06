@@ -81,6 +81,18 @@ module singlecycle(
 			  .Address(currentpc)
 			  );
 
+
+
+
+
+// get the instruction at current pc, then decompose into rd, rm, rn, opcode. [6] (in schematic)
+// contorl unit input = opcode, output [2] (in schematic)
+
+
+
+
+
+
    // Control Unit
    SC_Control SingleCycleControl(
 		   .Reg2Loc(Reg2Loc),
@@ -96,6 +108,17 @@ module singlecycle(
 		   .opcode(opcode)
 		   );
 
+
+
+
+
+
+
+// registerfile [2] and [5]
+// output is BusA[read data 1] and BusB[read data2]
+
+
+
    // Register File
    RegisterFile rf(
 		   .BusA(regoutA),
@@ -108,6 +131,12 @@ module singlecycle(
 		   .Clk(CLK)
 		   );
 
+
+
+
+
+// sign extend immediates so its 64 bits so u can add with other 64 bits such as registers 
+
    // Sign Extender
    SignExtender signext(
 			.SignExOut(extimm),
@@ -115,9 +144,21 @@ module singlecycle(
 			.SignOp(SignOp)
 			);
 
+
+
+
+
+
+
+// [2]
    // ALUSrc Multiplexer: selects between regoutB and sign-extended immediate
    assign aluin2 = ALUSrc ? extimm : regoutB;
 
+
+
+
+// [6]
+/ input either BusA [read data 1] or BusB aluin2[2, a mux to select between extended immedaite or regout B]
    // ALU
    ALU alu(
 	   .BusW(aluout),
@@ -127,6 +168,11 @@ module singlecycle(
 	   .Zero(zero)
 	   );
 
+
+
+
+
+//  memwrite and memread [blue] 
    // Data Memory
    DataMemory datamem(
 		      .ReadData(memout),
