@@ -158,7 +158,7 @@ module singlecycle(
 
 
 // [6]
-/ input either BusA [read data 1] or BusB aluin2[2, a mux to select between extended immedaite or regout B]
+// input either BusA [read data 1] or BusB aluin2[2, a mux to select between extended immedaite or regout B]
    // ALU
    ALU alu(
 	   .BusW(aluout),
