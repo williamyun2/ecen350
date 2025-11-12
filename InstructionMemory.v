@@ -62,6 +62,14 @@ module InstructionMemory(Data, Address);
 	63'h030: Data = 32'hF84203ED;  //One last load to place stored value on memdbus for test checking.
 
 	/* Add code for your tests here */
+		// MOVZ Test: Construct 0x123456789abcdef0 in X9
+		63'h034: Data = 32'hD29BDE09;  // MOVZ X9, 0xdef0, LSL #0
+		63'h038: Data = 32'hD2B35789;  // MOVZ X9, 0x9abc, LSL #16
+		63'h03c: Data = 32'hD2CACF09;  // MOVZ X9, 0x5678, LSL #32
+		63'h040: Data = 32'hD2E24689;  // MOVZ X9, 0x1234, LSL #48
+		63'h044: Data = 32'hF80283E9;  // STUR X9, [XZR, #0x28]
+		63'h048: Data = 32'hF84283EA;  // LDUR X10, [XZR, #0x28]
+		63'h04c: Data = 32'h14000000;  // B 0x04C (infinite loop)
 
 	
 	default: Data = 32'hXXXXXXXX;

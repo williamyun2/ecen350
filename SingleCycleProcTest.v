@@ -90,10 +90,35 @@ module SingleCycleProcTest_v;
       // ***********************************************************
       // Add your new tests here
       // ***********************************************************
+      
+      // MOVZ Test: Test the MOVZ instruction
+      $display("\n=== Starting MOVZ Test ===");
+      
+      // Run until we complete the LDUR at 0x48, then one more to reach 0x4C
+      while (currentPC < 64'h4C)
+        begin
+	   @(posedge CLK);
+	   @(negedge CLK);
+           $display("CurrentPC:%h Instruction:%h X9:%h X10:%h MemtoRegOut:%h", 
+                    currentPC, uut.instruction, uut.rf.rf[9], uut.rf.rf[10], MemtoRegOut);
+        end
+      
+      // Execute one more cycle to see the branch instruction
+      @(posedge CLK);
+      @(negedge CLK);
+      $display("CurrentPC:%h Instruction:%h X9:%h X10:%h MemtoRegOut:%h", 
+               currentPC, uut.instruction, uut.rf.rf[9], uut.rf.rf[10], MemtoRegOut);
+      
+      $display("\n=== MOVZ Test Results ===");
+      // Check that X9 has the correct value after MOVZ instructions
+      // Final MOVZ puts 0x1234 in bits [63:48], all else zeros
+      passTest(uut.rf.rf[9], 64'h1234000000000000, "MOVZ X9 Construction", passed);
+      
+      // Check that X10 has the correct value after load from memory
+      passTest(uut.rf.rf[10], 64'h1234000000000000, "MOVZ Memory Store/Load", passed);
 
       // Done
-      allPassed(passed, 1);   // Be sure to change the one to match
-      // the number of tests you add.
+      allPassed(passed, 3);   // 3 tests total
       $finish;
    end
 
@@ -111,7 +136,7 @@ module SingleCycleProcTest_v;
 
    // Kill the simulation if the watchdog hits 64K cycles
    always @*
-     if (watchdog == 16'hFF)
+     if (watchdog == 16'hFFFF)
        begin
           $display("Watchdog Timer Expired.");
           $finish;
